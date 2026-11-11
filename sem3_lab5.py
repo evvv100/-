@@ -9,32 +9,37 @@ class MarketplaceDB:
         self.connection = sqlite3.connect(db)
         self.cursor = self.connection.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON;")
-
+        self.cursor.execute("PRAGMA table_info(Users);")
+        tuple1 = self.cursor.fetchall()
+        columns1 = []
+        for tup in tuple1:
+            columns1.append(tup[1])
+        self.fill_data("Users", columns1[1:], self.generate_1000_users())
+        self.cursor.execute("PRAGMA table_info(Goods);")
+        tuple1 = self.cursor.fetchall()
+        columns1 = []
+        for tup in tuple1:
+            columns1.append(tup[1])
+        self.fill_data("Goods", columns1[1:], self.generate_1000_goods())
     def fill_data(self, table_name, columns, data_list):
         """Метод для заполнения таблицы в базе данных"""
-        if self.cursor.fetchall() is None:
+        query = "SELECT COUNT(*) FROM " + table_name
+        self.cursor.execute(query)
+        count = self.cursor.fetchone()[0]
+        if count > 0:
             return
         columns_str = ", ".join(columns)
         placeholders = ", ".join(["?"] * len(columns))
         sql_query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders});"
-        self.cursor.executemany(sql_query, data_list)
+        self.cursor.executemany(sql_query, tuple(data_list))
         self.connection.commit()
 
     def generate_1000_users(self):
         """Метод для генерации случайных 1000 пользователей. Возвращает список типа (str)"""
         list = []
         for i in range(1000):
-            login = ""
-            for j in range(6):
-                num = random.randint(0, 2)
-                if num == 0:
-                    kod = chr(random.randint(65, 90))
-                elif num == 1:
-                    kod = chr(random.randint(97, 122))
-                else:
-                    kod = random.randint(0,9)
-                login+=str(kod)
-            list.append(login)
+            login = "user" + str(i + 1)
+            list.append((login,))
         return list
 
     def generate_1000_goods(self):
@@ -61,7 +66,7 @@ class MarketplaceDB:
         self.cursor.execute(query_id, (login,))
         rows = self.cursor.fetchall()
         if not rows:
-            return
+            return False
         user_id = rows[0][0]
         current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sql_query = "INSERT INTO Orders (User_ID, Date) VALUES (?, ?)"
@@ -75,22 +80,56 @@ class MarketplaceDB:
             row = self.cursor.fetchone()
             if row:
                 ids.append(row)
-
-
+        if not ids:
+            return False
         goods_counts = Counter(ids)
         my_goods = []
         for good_id, count in goods_counts.items():
             my_goods.append((new_order_id, good_id[0], count))
         if not my_goods:
-            return
+            return False
         self.cursor.executemany(query_orders, my_goods)
         self.connection.commit()
+        return True
 
 class ConsoleInterface:
     def __init__(self, db_manager):
         self.db_manager = db_manager
     def start_console(self):
-        pass
+        while True:
+            self.print_users(self.db_manager.get_20_random_users())
+            print()
+            self.print_goods(self.db_manager.get_20_random_goods())
+            print()
+            while True:
+                choice = input(
+                    "Введите логин пользователя и список товаров (пример: -user user1 -order товар1 товар2 товар1): ")
+                if not choice:
+                    print("Ввод пуст, попробуйте снова!")
+                else:
+                    list1 = choice.split()
+                    if len(list1) >= 4:
+                        if list1[0] == "-user" and list1[2] == "-order":
+                            login = list1[1]
+                            goods = []
+                            for i in range(3, len(list1)):
+                                goods.append(list1[i])
+                            if not goods:
+                                print("Список пустой, попробуйте ввести список товаров!")
+                            else:
+                                break
+                        else:
+                            print("Ввод неверный, попробуйте снова!")
+                    else:
+                        print("Неверный ввод, попробуйте снова!")
+            #
+            bb = self.db_manager.create_order(login, goods)
+            if bb:
+                print("Ваш заказ успешно создан!")
+            else:
+                print("К сожалению, заказ не был создан.")
+            break
+
     def print_users(self, user_list):
         if user_list is None:
             return
@@ -109,3 +148,8 @@ class ConsoleInterface:
             good_id, name, price = good
             print(f"{good_id}\t{name}\t{price}")
 
+
+if __name__ == "__main__":
+    db = MarketplaceDB(r"C:\ОСНОВА\КСП_База_Данных\CSP.db")
+    app = ConsoleInterface(db)
+    app.start_console()

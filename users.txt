@@ -8,3 +8,5 @@
 {'lastname': 'Иванов', 'firstname': 'Иван', 'telephone': '+79456541278', 'address': 'Красноярск, ул. Ак. Киренского, 26 к1', 'position': 'инженер', 'salary': 123}
 {'lastname': 'Петров', 'firstname': 'Петр', 'telephone': '+79457652389', 'address': 'Красноярск, пр. Свободный, 79', 'order': 'Order-123'}
 {'lastname': 'Никулин', 'firstname': 'Григорий', 'telephone': '+79475835567', 'address': 'ул. красноясркий рабочий', 'order': '235'}
+{'lastname': 'Иванов', 'firstname': 'Иван', 'telephone': '+79456541278', 'address': 'Красноярск, ул. Ак. Киренского, 26 к1', 'position': 'инженер', 'salary': 123}
+{'lastname': 'Петров', 'firstname': 'Петр', 'telephone': '+79457652389', 'address': 'Красноярск, пр. Свободный, 79', 'order': 'Order-123'}
