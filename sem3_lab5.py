@@ -1,6 +1,7 @@
 import sqlite3
 import random
 from datetime import datetime
+from collections import Counter
 
 class MarketplaceDB:
     """Класс для управления магазином"""
@@ -56,7 +57,34 @@ class MarketplaceDB:
         return self.cursor.fetchall()
 
     def create_order(self, login, goods_list):
-        pass
+        query_id = "SELECT ID FROM Users WHERE Login = ?"
+        self.cursor.execute(query_id, (login,))
+        rows = self.cursor.fetchall()
+        if not rows:
+            return
+        user_id = rows[0][0]
+        current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sql_query = "INSERT INTO Orders (User_ID, Date) VALUES (?, ?)"
+        self.cursor.execute(sql_query, (user_id, current_date))
+        new_order_id = self.cursor.lastrowid
+        query_orders = "INSERT INTO Order_rows (Order_ID, Good_ID, Quantity) VALUES (?, ?, ?)"
+        query_id_goods = "SELECT ID FROM Goods WHERE Name = ?"
+        ids = []
+        for i in range(len(goods_list)):
+            self.cursor.execute(query_id_goods, (goods_list[i],))
+            row = self.cursor.fetchone()
+            if row:
+                ids.append(row)
+
+
+        goods_counts = Counter(ids)
+        my_goods = []
+        for good_id, count in goods_counts.items():
+            my_goods.append((new_order_id, good_id[0], count))
+        if not my_goods:
+            return
+        self.cursor.executemany(query_orders, my_goods)
+        self.connection.commit()
 
 class ConsoleInterface:
     def __init__(self, db_manager):
